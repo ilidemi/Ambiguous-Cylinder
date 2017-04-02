@@ -1,13 +1,21 @@
 radius = 20;
-thickness = 2;
+thickness = 3;
 height = 50;
 detail = 500;
+
+count_x = 3;
+count_y = 2;
 
 generate_support = true;
 support_distance = 0.3;
 support_height = 10;
 
-module ambicylinder(radius, thickness, h, n) {
+ambicylinder_array(radius, thickness, height, detail, false, 0, count_x, count_y);
+if (generate_support) {
+    ambicylinder_array_support(radius, thickness, height, detail, count_x, count_y, support_distance, support_height);
+}
+
+module ambicylinder(radius, thickness, h, n, flat_bottom) {
     m = n/2;
     r = radius - thickness;
     R = radius;
@@ -23,16 +31,16 @@ module ambicylinder(radius, thickness, h, n) {
         [for (i=[0:m-1]) [r * -x(t(i)), r * -y(t(i)), h + r * -z(t(i))]]
     );
     inner_bottom = concat(
-        [for (i=[0:m-1]) [r *  x(t(i)), r *  y(t(i)), r *  z(t(i))]],
-        [for (i=[0:m-1]) [r * -x(t(i)), r * -y(t(i)), r * -z(t(i))]]
+        [for (i=[0:m-1]) [r *  x(t(i)), r *  y(t(i)), flat_bottom ? 0 : r *  z(t(i))]],
+        [for (i=[0:m-1]) [r * -x(t(i)), r * -y(t(i)), flat_bottom ? 0 : r * -z(t(i))]]
     );
     outer_top = concat(
         [for (i=[0:m-1]) [R *  x(t(i)), R *  y(t(i)), h + R *  z(t(i))]],
         [for (i=[0:m-1]) [R * -x(t(i)), R * -y(t(i)), h + R * -z(t(i))]]
     );
     outer_bottom = concat(
-        [for (i=[0:m-1]) [R * x(t(i)),  R *  y(t(i)), R *  z(t(i))]],
-        [for (i=[0:m-1]) [R * -x(t(i)), R * -y(t(i)), R * -z(t(i))]]
+        [for (i=[0:m-1]) [R * x(t(i)),  R *  y(t(i)), flat_bottom ? 0 : R *  z(t(i))]],
+        [for (i=[0:m-1]) [R * -x(t(i)), R * -y(t(i)), flat_bottom ? 0 : R * -z(t(i))]]
     );
     points = concat(inner_top, inner_bottom, outer_bottom, outer_top);
     faces = concat(
@@ -51,24 +59,35 @@ module ambicylinder(radius, thickness, h, n) {
         [for (i=[0:n-1]) [3*n+i, 3*n+inc(i), inc(i)]], // top 1
         [for (i=[0:n-1]) [3*n+i, i, inc(i)]] // top 2
     );
+    triangles2 = concat(
+        [for (i=[0:n-1]) [i, inc(i), n+inc(i), n+i]], // inner
+        [for (i=[0:n-1]) [n+i, n+inc(i), 2*n+inc(i)]], // bottom 1
+        [for (i=[0:n-1]) [n+i, 2*n+inc(i), 2*n+i]], // bottom 2
+        [for (i=[0:n-1]) [2*n+i, 2*n+inc(i), 3*n+inc(i), 3*n+i]], // outer
+        [for (i=[0:n-1]) [3*n+i, 3*n+inc(i), inc(i)]], // top 1
+        [for (i=[0:n-1]) [3*n+i, inc(i), i]] // top 2
+    );
     
-    polyhedron(points=points, faces=faces);
+    polyhedron(points=points, faces=triangles2);
 }
 
-module ambicylinder_with_support(radius, thickness, height, n, gen_support, s_distance, s_height) {
-    ambicylinder(radius, thickness, height, n);
-    
-    if (gen_support) {
-        difference() {
-            translate([0, 0, -height - support_distance]) {
-                ambicylinder(radius=radius, thickness=thickness, h=height, n=detail);
-            }
-            translate([0, 0, -support_distance - support_height - (height + radius) / 2]) {
-                cube([2 * radius, 2 * radius, height + radius], true);
+module ambicylinder_array(radius, thickness, height, n, flat_bottom, swelling, count_x, count_y) {
+    off = 2 * radius - thickness;
+    for (i=[0:count_x-1]) {
+        for (j=[0:count_y-1]) {
+            translate([i * off, j * off, -swelling]) {
+                ambicylinder(radius + swelling, thickness + 2 * swelling, height + 2 * swelling, n, flat_bottom);
             }
         }
     }
 }
 
-ambicylinder_with_support(radius, thickness, height, detail, generate_support, support_distance, support_height);
-
+module ambicylinder_array_support(radius, thickness, height, n, count_x, count_y, support_distance, support_height) {
+    
+    difference() {
+        translate([0, 0, -support_height]) {
+            ambicylinder_array(radius, thickness, support_height, n, true, 0, count_x, count_y);
+        }
+        ambicylinder_array(radius, thickness, height, n, false, support_distance, count_x, count_y);
+    }
+}
