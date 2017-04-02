@@ -1,4 +1,4 @@
 # Ambicylinder
-Kokichi Sugihara' optical illusion
+Kokichi Sugihara's optical illusion
 
 ![Screenshot](screenshot.png)

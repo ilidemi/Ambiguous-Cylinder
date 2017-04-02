@@ -45,22 +45,6 @@ module ambicylinder(radius, thickness, h, n, flat_bottom) {
     points = concat(inner_top, inner_bottom, outer_bottom, outer_top);
     faces = concat(
         [for (i=[0:n-1]) [i, inc(i), n+inc(i), n+i]], // inner
-        [for (i=[0:n-1]) [n+i, n+inc(i), 2*n+inc(i), 2*n+i]], // bottom
-        [for (i=[0:n-1]) [2*n+i, 2*n+inc(i), 3*n+inc(i), 3*n+i]], // outer
-        [for (i=[0:n-1]) [3*n+i, 3*n+inc(i), inc(i), i]] // top
-    );
-    triangles = concat(
-        [for (i=[0:n-1]) [i, inc(i), n+inc(i)]], // inner 1
-        [for (i=[0:n-1]) [i, n+i, n+inc(i)]], // inner 2
-        [for (i=[0:n-1]) [n+i, n+inc(i), 2*n+inc(i)]], // bottom 1
-        [for (i=[0:n-1]) [n+i, 2*n+i, 2*n+inc(i)]], // bottom 2
-        [for (i=[0:n-1]) [2*n+i, 2*n+inc(i), 3*n+inc(i)]], // outer 1
-        [for (i=[0:n-1]) [2*n+i, 3*n+i, 3*n+inc(i)]], // outer 2
-        [for (i=[0:n-1]) [3*n+i, 3*n+inc(i), inc(i)]], // top 1
-        [for (i=[0:n-1]) [3*n+i, i, inc(i)]] // top 2
-    );
-    triangles2 = concat(
-        [for (i=[0:n-1]) [i, inc(i), n+inc(i), n+i]], // inner
         [for (i=[0:n-1]) [n+i, n+inc(i), 2*n+inc(i)]], // bottom 1
         [for (i=[0:n-1]) [n+i, 2*n+inc(i), 2*n+i]], // bottom 2
         [for (i=[0:n-1]) [2*n+i, 2*n+inc(i), 3*n+inc(i), 3*n+i]], // outer
@@ -68,7 +52,7 @@ module ambicylinder(radius, thickness, h, n, flat_bottom) {
         [for (i=[0:n-1]) [3*n+i, inc(i), i]] // top 2
     );
     
-    polyhedron(points=points, faces=triangles2);
+    polyhedron(points=points, faces=faces);
 }
 
 module ambicylinder_array(radius, thickness, height, n, flat_bottom, swelling, count_x, count_y) {
@@ -83,7 +67,6 @@ module ambicylinder_array(radius, thickness, height, n, flat_bottom, swelling, c
 }
 
 module ambicylinder_array_support(radius, thickness, height, n, count_x, count_y, support_distance, support_height) {
-    
     difference() {
         translate([0, 0, -support_height]) {
             ambicylinder_array(radius, thickness, support_height, n, true, 0, count_x, count_y);
