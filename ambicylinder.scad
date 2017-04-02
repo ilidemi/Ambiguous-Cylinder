@@ -1,7 +1,10 @@
 radius = 20;
 thickness = 2;
 height = 50;
-detail = 500;
+detail = 100;
+
+count_x = 1;
+count_y = 1;
 
 generate_support = true;
 support_distance = 0.3;
@@ -51,8 +54,16 @@ module ambicylinder(radius, thickness, h, n) {
         [for (i=[0:n-1]) [3*n+i, 3*n+inc(i), inc(i)]], // top 1
         [for (i=[0:n-1]) [3*n+i, i, inc(i)]] // top 2
     );
+    triangles2 = concat(
+        [for (i=[0:n-1]) [i, inc(i), n+inc(i), n+i]], // inner
+        [for (i=[0:n-1]) [n+i, n+inc(i), 2*n+inc(i)]], // bottom 1
+        [for (i=[0:n-1]) [n+i, 2*n+i, 2*n+inc(i)]], // bottom 2
+        [for (i=[0:n-1]) [2*n+i, 2*n+inc(i), 3*n+inc(i), 3*n+i]], // outer
+        [for (i=[0:n-1]) [3*n+i, 3*n+inc(i), inc(i)]], // top 1
+        [for (i=[0:n-1]) [3*n+i, i, inc(i)]] // top 2
+    );
     
-    polyhedron(points=points, faces=faces);
+    polyhedron(points=points, faces=triangles2);
 }
 
 module ambicylinder_with_support(radius, thickness, height, n, gen_support, s_distance, s_height) {
@@ -70,5 +81,39 @@ module ambicylinder_with_support(radius, thickness, height, n, gen_support, s_di
     }
 }
 
-ambicylinder_with_support(radius, thickness, height, detail, generate_support, support_distance, support_height);
+// ambicylinder_with_support(radius, thickness, height, detail, generate_support, support_distance, support_height);
+
+
+module ambicylinder_array(radius, thickness, height, n, count_x, count_y) {
+    off = 2 * radius - thickness;
+    for (i=[0:count_x-1]) {
+        for (j=[0:count_y-1]) {
+            translate([i * off, j * off, 0]) {
+                ambicylinder(radius, thickness, height, n);
+            }
+        }
+    }
+}
+
+module ambicylinder_array_support(radius, thickness, height, n, count_x, count_y, support_distance, support_height) {
+    
+    difference() {
+        difference() {
+            //translate([0, 0, -height]) {
+            //    ambicylinder_array(radius, thickness, height, n, count_x, count_y);
+            //}
+            translate([0, 0, -support_height - (height + radius) / 2]) {
+                cube([2 * radius * 2 * count_x + 1, 2 * radius * 2 * count_y + 1, height + radius], true);
+            }
+        }/*
+        minkowski() {
+            ambicylinder_array(radius, thickness, height, n, count_x, count_y);
+            sphere(support_distance);
+        }*/
+    }
+}
+
+$fn=10;
+//ambicylinder_array(radius, thickness, height, detail, count_x, count_y);
+ambicylinder_array_support(radius, thickness, height, detail, count_x, count_y, support_distance, support_height);
 
